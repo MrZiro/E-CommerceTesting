@@ -12,7 +12,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.HasOne<Product>()
             .WithMany()
-            .HasForeignKey(oi => oi.ProductId);
+            .HasForeignKey(oi => oi.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.OwnsOne(oi => oi.UnitPrice, priceBuilder =>
         {

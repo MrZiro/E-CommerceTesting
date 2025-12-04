@@ -34,7 +34,7 @@ public sealed class CartItem : Entity
     public Result AddQuantity(int quantity)
     {
         if (Quantity + quantity <= 0)
-            return Result.Fail(DomainErrors.CartItem.InvalidQuantity);
+            return Result.Fail(DomainErrors.CartItem.InvalidResultingQuantity);
         Quantity += quantity;
         return Result.Ok();
     }

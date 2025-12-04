@@ -27,6 +27,7 @@ public static class DomainErrors
         public static Error EmptyCartId => new("CartItem.EmptyCartId", "Cart ID cannot be empty.");
         public static Error EmptyProductId => new("CartItem.EmptyProductId", "Product ID cannot be empty.");
         public static Error InvalidQuantity => new("CartItem.InvalidQuantity", "Quantity must be greater than zero.");
+        public static Error InvalidResultingQuantity => new("CartItem.InvalidResultingQuantity", "Resulting quantity must be greater than zero.");
     }
 
     public static class Order
@@ -55,6 +56,6 @@ public static class DomainErrors
 
     public static class Token
     {
-        public static Error Invalid => new("Token.Invalid", "Reset token is required.");
+        public static Error Required => new("Token.Required", "Reset token is required.");
     }
 }

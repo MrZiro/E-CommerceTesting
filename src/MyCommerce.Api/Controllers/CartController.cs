@@ -21,7 +21,13 @@ public class CartController : ApiController
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier) 
                       ?? User.FindFirst("sub"); // JWT standard 'sub'
         
-        return idClaim != null ? Guid.Parse(idClaim.Value) : Guid.Empty;
+        if (idClaim is null || !Guid.TryParse(idClaim.Value, out var userId))
+        {
+            throw new UnauthorizedAccessException(
+                $"Invalid or missing user identity claim. ClaimType={idClaim?.Type ?? "null"}, Value={idClaim?.Value ?? "null"}");
+        }
+
+        return userId;
     }
 
     [HttpGet]

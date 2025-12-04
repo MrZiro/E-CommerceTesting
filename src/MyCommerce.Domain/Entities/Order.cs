@@ -38,7 +38,7 @@ public sealed class Order : AggregateRoot
         _orderItems.AddRange(orderItems);
     }
 
-    private static readonly HashSet<string> ValidStatuses = new()
+    private static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         "Pending", "Processing", "Shipped", "Delivered", "Cancelled"
     };

@@ -31,9 +31,17 @@ public class DeleteProductService
             return Result.Fail<None>(DomainErrors.Product.CannotDeleteInUse);
         }
 
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        try
+        {
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Catch FK constraint violation if an order was created concurrently
+            return Result.Fail<None>(DomainErrors.Product.CannotDeleteInUse);
+        }
 
         return Result.Success(None.Value);
     }

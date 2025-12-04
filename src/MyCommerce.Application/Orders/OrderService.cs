@@ -163,6 +163,16 @@ public class OrderService
 
     public async Task<Result<PagedResult<OrderDto>>> GetAllOrdersAsync(int pageNumber, int pageSize, string? status, CancellationToken cancellationToken = default)
     {
+        if (pageNumber < 1)
+        {
+            return Result.Fail<PagedResult<OrderDto>>(new Error("Pagination.InvalidPageNumber", "Page number must be greater than or equal to 1."));
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return Result.Fail<PagedResult<OrderDto>>(new Error("Pagination.InvalidPageSize", "Page size must be between 1 and 100."));
+        }
+
         var query = _context.Orders
             .AsNoTracking()
             .Include(o => o.OrderItems)

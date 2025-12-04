@@ -8,8 +8,6 @@ public class ImagesController : ApiController
 {
     private readonly IFileStorage _fileStorage;
 
-    private static readonly string[] AllowedTypes = { "image/png", "image/jpeg", "image/gif", "image/webp" };
-
     private static readonly Dictionary<string, byte[][]> ImageSignatures = new()
     {
         { "image/png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47 } } },
@@ -29,10 +27,17 @@ public class ImagesController : ApiController
             return false;
         
         var headerBytes = new byte[8];
-        stream.ReadExactly(headerBytes, 0, Math.Min((int)stream.Length, headerBytes.Length));
+        var bytesRead = stream.Read(headerBytes, 0, headerBytes.Length);
         stream.Position = 0; // Reset for subsequent read
+
+        if (bytesRead == 0)
+        {
+            return false;
+        }
         
-        return signatures.Any(sig => headerBytes.Take(sig.Length).SequenceEqual(sig));
+        return signatures.Any(sig => 
+            bytesRead >= sig.Length && 
+            headerBytes.Take(sig.Length).SequenceEqual(sig));
     }
 
     [HttpPost("upload")]
@@ -44,7 +49,7 @@ public class ImagesController : ApiController
             return BadRequest("No file uploaded.");
         }
 
-        if (!AllowedTypes.Contains(file.ContentType))
+        if (!ImageSignatures.ContainsKey(file.ContentType))
         {
             return BadRequest("Only image files (PNG, JPEG, GIF, WebP) are allowed.");
         }

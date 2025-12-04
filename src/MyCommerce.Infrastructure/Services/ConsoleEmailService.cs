@@ -23,11 +23,11 @@ public class ConsoleEmailService : IEmailService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            return Task.FromResult(Result.Fail<None>(DomainErrors.Token.Invalid));
+            return Task.FromResult(Result.Fail<None>(DomainErrors.Token.Required));
         }
 
         _logger.LogInformation("----------------------------------------------------------------");
-        _logger.LogInformation(" Sending Password Reset Email to: {Email}", email);
+        _logger.LogInformation(" Sending Password Reset Email to: [REDACTED] (domain: {Domain})", email.Split('@').LastOrDefault());
         _logger.LogInformation(" Token: [REDACTED] (length: {Length})", token.Length);
         _logger.LogInformation("----------------------------------------------------------------");
 
