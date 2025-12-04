@@ -22,6 +22,12 @@ public class AdminOrdersController : ApiController
         CancellationToken cancellationToken = default)
     {
         var result = await _orderService.GetAllOrdersAsync(pageNumber, pageSize, status, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return Problem(result.Errors.ToList());
+        }
+
         return Ok(result.Value);
     }
 

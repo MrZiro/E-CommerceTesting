@@ -13,10 +13,26 @@ public static class DomainErrors
     // Add other domain-specific errors here
     public static class Product
     {
+        public static Error NotFound => new("Product.NotFound", "Product not found.");
+        public static Error NameRequired => new("Product.NameRequired", "Product name is required.");
         public static Error NameTooLong => new("Product.NameTooLong", "Product name cannot exceed 100 characters.");
         public static Error InvalidPrice => new("Product.InvalidPrice", "Product price must be greater than zero.");
         public static Error InvalidSku => new("Product.InvalidSku", "Invalid SKU format.");
         public static Error InvalidStockChange => new("Product.InvalidStockChange", "Stock cannot be negative after change.");
+        public static Error CannotDeleteInUse => new("Product.CannotDeleteInUse", "Cannot delete product because it is part of existing orders.");
+    }
+
+    public static class CartItem
+    {
+        public static Error EmptyCartId => new("CartItem.EmptyCartId", "Cart ID cannot be empty.");
+        public static Error EmptyProductId => new("CartItem.EmptyProductId", "Product ID cannot be empty.");
+        public static Error InvalidQuantity => new("CartItem.InvalidQuantity", "Quantity must be greater than zero.");
+    }
+
+    public static class Order
+    {
+        public static Error MixedCurrencies => new("Order.MixedCurrencies", "All order items must use the same currency.");
+        public static Error CurrencyMismatch => new("Order.CurrencyMismatch", "New item currency must match existing items.");
     }
 
     public static class Sku

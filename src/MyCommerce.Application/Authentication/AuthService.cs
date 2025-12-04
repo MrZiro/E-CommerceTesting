@@ -130,7 +130,7 @@ public class AuthService
 
         if (user is null)
         {
-            return Result.Fail<None>(new Error("Auth.InvalidRequest", "Invalid request."));
+            return Result.Fail<None>(new Error("Auth.InvalidToken", "Invalid or expired token."));
         }
 
         if (user.PasswordResetToken != request.Token || user.PasswordResetTokenExpiry < DateTime.UtcNow)

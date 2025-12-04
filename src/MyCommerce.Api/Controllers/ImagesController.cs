@@ -22,10 +22,21 @@ public class ImagesController : ApiController
             return BadRequest("No file uploaded.");
         }
 
-        // Optional: Add validation for file type (image/png, image/jpeg) and size
+        var allowedTypes = new[] { "image/png", "image/jpeg", "image/gif", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            return BadRequest("Only image files (PNG, JPEG, GIF, WebP) are allowed.");
+        }
+
+        const long maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+        if (file.Length > maxSizeBytes)
+        {
+            return BadRequest("File size exceeds the 5 MB limit.");
+        }
 
         using var stream = file.OpenReadStream();
-        var url = await _fileStorage.SaveFileAsync(stream, file.FileName, cancellationToken);
+        var safeFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var url = await _fileStorage.SaveFileAsync(stream, safeFileName, cancellationToken);
 
         return Ok(new { Url = url });
     }

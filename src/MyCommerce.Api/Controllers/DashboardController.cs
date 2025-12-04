@@ -18,6 +18,10 @@ public class DashboardController : ApiController
     public async Task<IActionResult> GetStats(CancellationToken cancellationToken)
     {
         var result = await _dashboardService.GetStatsAsync(cancellationToken);
+        if (result.IsFailure)
+        {
+            return Problem(result.Errors);
+        }
         return Ok(result.Value);
     }
 }

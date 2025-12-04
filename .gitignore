@@ -32,6 +32,7 @@ packages/
 
 ## Logs
 *.log
+logs/
 
 ## Temp folders
 *.tmp

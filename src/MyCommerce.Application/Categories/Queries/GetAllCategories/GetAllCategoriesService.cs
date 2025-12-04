@@ -19,10 +19,14 @@ public class GetAllCategoriesService
 
     public async Task<Result<List<CategoryDto>>> GetAllAsync(GetAllCategoriesQuery query, CancellationToken cancellationToken = default)
     {
-        var categories = await _context.Categories
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        var categoryQuery = _context.Categories.AsNoTracking();
 
+        if (query.ParentId.HasValue)
+        {
+            categoryQuery = categoryQuery.Where(c => c.ParentId == query.ParentId.Value);
+        }
+
+        var categories = await categoryQuery.ToListAsync(cancellationToken);
         return _mapper.Map<List<CategoryDto>>(categories);
     }
 }

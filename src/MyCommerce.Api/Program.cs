@@ -111,7 +111,7 @@ try
     {
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        await DbSeeder.SeedAsync(context, hasher);
+        await DbSeeder.SeedAsync(context, hasher, app.Environment.IsDevelopment());
     }
 
     app.UseExceptionHandler(); // Add the exception handling middleware
@@ -135,6 +135,15 @@ try
 
     app.MapHealthChecks("/health"); // Map Health Checks
     app.MapControllers(); // Map Controllers
+
+    if (app.Environment.IsDevelopment())
+    {
+        Log.Information("==========================================================");
+        Log.Information("🚀 Server is running!");
+        Log.Information("👉 App:   http://localhost:5006");
+        Log.Information("👉 Docs:  http://localhost:5006/scalar/v1");
+        Log.Information("==========================================================");
+    }
 
     app.Run();
 }

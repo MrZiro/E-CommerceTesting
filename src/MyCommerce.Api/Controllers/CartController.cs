@@ -29,6 +29,12 @@ public class CartController : ApiController
     {
         var userId = GetUserId();
         var result = await _cartService.GetCartAsync(userId, cancellationToken);
+        
+        if (result.IsFailure)
+        {
+            return Problem(result.Errors.ToList());
+        }
+
         return Ok(result.Value);
     }
 

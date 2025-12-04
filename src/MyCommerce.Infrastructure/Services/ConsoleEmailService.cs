@@ -17,7 +17,7 @@ public class ConsoleEmailService : IEmailService
     {
         _logger.LogInformation("----------------------------------------------------------------");
         _logger.LogInformation(" Sending Password Reset Email to: {Email}", email);
-        _logger.LogInformation(" Token: {Token}", token);
+        _logger.LogInformation(" Token: [REDACTED] (length: {Length})", token.Length);
         _logger.LogInformation("----------------------------------------------------------------");
 
         return Task.FromResult(Result.Success(None.Value));

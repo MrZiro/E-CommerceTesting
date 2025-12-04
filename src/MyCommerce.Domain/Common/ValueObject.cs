@@ -6,16 +6,26 @@ public abstract class ValueObject : IEquatable<ValueObject>
 
     public bool Equals(ValueObject? other)
     {
-        return other is not null && GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
-    }
-
-    public override bool Equals(object? obj)
-    {
-        if (obj is null || obj.GetType() != GetType())
+        if (ReferenceEquals(null, other))
         {
             return false;
         }
 
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        if (other.GetType() != GetType())
+        {
+            return false;
+        }
+
+        return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
+    }
+
+    public override bool Equals(object? obj)
+    {
         return Equals(obj as ValueObject);
     }
 
@@ -23,7 +33,7 @@ public abstract class ValueObject : IEquatable<ValueObject>
     {
         return GetEqualityComponents()
             .Select(x => x?.GetHashCode() ?? 0)
-            .Aggregate((x, y) => x ^ y);
+            .Aggregate(0, (x, y) => x ^ y);
     }
 
     public static bool operator ==(ValueObject? left, ValueObject? right)

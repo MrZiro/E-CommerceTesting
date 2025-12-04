@@ -42,6 +42,11 @@ public class OrdersController : ApiController
         var userId = GetUserId();
         var result = await _orderService.GetMyOrdersAsync(userId, cancellationToken);
         
+        if (result.IsFailure)
+        {
+            return Problem(result.Errors.ToList());
+        }
+        
         return Ok(result.Value);
     }
 }

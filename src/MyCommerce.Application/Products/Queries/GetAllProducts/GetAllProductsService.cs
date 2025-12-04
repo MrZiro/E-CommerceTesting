@@ -19,8 +19,23 @@ public class GetAllProductsService
 
     public async Task<Result<List<ProductDto>>> GetAllAsync(GetAllProductsQuery query, CancellationToken cancellationToken = default)
     {
-        var products = await _context.Products
-            .AsNoTracking()
+        var productsQuery = _context.Products.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+            productsQuery = productsQuery.Where(p => p.Name.Contains(query.SearchTerm));
+
+        if (query.CategoryId.HasValue)
+            productsQuery = productsQuery.Where(p => p.CategoryId == query.CategoryId.Value);
+
+        if (query.MinPrice.HasValue)
+            productsQuery = productsQuery.Where(p => p.Price.Amount >= query.MinPrice.Value);
+
+        if (query.MaxPrice.HasValue)
+            productsQuery = productsQuery.Where(p => p.Price.Amount <= query.MaxPrice.Value);
+
+        var products = await productsQuery
+            .Skip((query.PageNumber - 1) * query.PageSize)
+            .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
         return _mapper.Map<List<ProductDto>>(products);

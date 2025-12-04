@@ -41,7 +41,7 @@ public class SmtpEmailService : IEmailService
 
         _logger.LogInformation("Sending REAL Email via SMTP (Simulated for now)");
         _logger.LogInformation("Host: {Host}, Port: {Port}", _settings.Host, _settings.Port);
-        _logger.LogInformation("To: {Email}, Token: {Token}", email, token);
+        _logger.LogInformation("Password reset email queued for delivery");
 
         await Task.CompletedTask;
         return Result.Success(None.Value);

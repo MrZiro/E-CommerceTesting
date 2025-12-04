@@ -48,14 +48,22 @@ public sealed class Order : AggregateRoot
             return Result.Fail<Order>(new Error("Order.EmptyUserId", "User ID cannot be empty."));
         }
 
-        if (orderItems == null || !orderItems.Any())
+        var itemsList = orderItems?.ToList() ?? new List<OrderItem>();
+        if (itemsList.Count == 0)
         {
             return Result.Fail<Order>(new Error("Order.NoItems", "Order must contain at least one item."));
         }
 
+        // Validate currency consistency
+        var currencies = itemsList.Select(i => i.UnitPrice.Currency).Distinct().ToList();
+        if (currencies.Count > 1)
+        {
+            return Result.Fail<Order>(DomainErrors.Order.MixedCurrencies);
+        }
+
         // Calculate total from order items
-        var totalAmount = orderItems.Sum(item => item.Quantity * item.UnitPrice.Amount);
-        var currency = orderItems.First().UnitPrice.Currency; // Assuming all items have the same currency
+        var totalAmount = itemsList.Sum(item => item.Quantity * item.UnitPrice.Amount);
+        var currency = currencies[0];
 
         var totalResult = Money.From(totalAmount, currency);
 
@@ -70,7 +78,7 @@ public sealed class Order : AggregateRoot
             DateTime.UtcNow,
             totalResult.Value,
             status,
-            orderItems);
+            itemsList);
     }
 
     public Result<None> ChangeStatus(string newStatus)
@@ -87,6 +95,12 @@ public sealed class Order : AggregateRoot
     // Example of adding an item to an existing order (may have business rules)
     public Result<None> AddItem(OrderItem newItem)
     {
+        // Validate currency consistency with existing items
+        if (_orderItems.Any() && _orderItems.First().UnitPrice.Currency != newItem.UnitPrice.Currency)
+        {
+            return Result.Fail<None>(DomainErrors.Order.CurrencyMismatch);
+        }
+
         // Check for existing item or add new
         var existingItem = _orderItems.FirstOrDefault(oi => oi.ProductId == newItem.ProductId);
         if (existingItem != null)
@@ -95,16 +109,17 @@ public sealed class Order : AggregateRoot
             return Result.Fail<None>(new Error("Order.DuplicateItem", "Item already exists in order."));
         }
 
-        _orderItems.Add(newItem);
         // Recalculate total
-        var newTotalAmount = OrderItems.Sum(item => item.Quantity * item.UnitPrice.Amount);
-        var currency = OrderItems.First().UnitPrice.Currency;
+        var newTotalAmount = _orderItems.Sum(item => item.Quantity * item.UnitPrice.Amount) + (newItem.Quantity * newItem.UnitPrice.Amount);
+        var currency = newItem.UnitPrice.Currency; // Validated above
         var newTotalResult = Money.From(newTotalAmount, currency);
 
         if (newTotalResult.IsFailure)
         {
             return Result.Fail<None>(newTotalResult.Errors);
         }
+
+        _orderItems.Add(newItem);
         Total = newTotalResult.Value;
 
         // AddDomainEvent(new OrderItemAddedEvent(Id, newItem.Id));
