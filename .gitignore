@@ -1,0 +1,92 @@
+## .NET Core / .NET Framework build outputs
+bin/
+obj/
+out/
+
+## Visual Studio files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Visual Studio 2015+ cache/options
+.vs/
+*.vs/
+
+## ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## TeamCity
+_TeamCity*
+
+## Microsoft Visual Studio
+*.vcxproj.filters
+*.vcxproj.user
+
+## NuGet
+packages/
+*.nuget.props
+*.nuget.targets
+
+## Logs
+*.log
+
+## Temp folders
+*.tmp
+*.temp
+
+## Backup files
+*.bak
+*.backup
+
+## Database files
+*.mdf
+*.ldf
+
+## Certificates
+*.pfx
+*.cer
+
+## Test results
+TestResults/
+TestResults.xml
+
+## Code Coverage
+*.coverage
+*.coveragexml
+
+## Azure
+*.publish.xml
+*.azurePubxml
+
+## Docker
+.dockerignore
+
+## User-specific files
+*.userprefs
+
+## Mac files
+.DS_Store
+
+## Rider
+.idea/
+
+## Environment-specific files
+.env
+.env.local
+.env.*.local
+
+## Ignore any secret files
+secrets.json
+appsettings.Secret.json
+
+## Ignore SQLite databases
+*.db
+*.sqlite
+
+## Ignore development databases
+*Development.db
+
+.vscode/
