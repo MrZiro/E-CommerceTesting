@@ -78,5 +78,11 @@ public class CartController : ApiController
     }
 }
 
-public record AddCartItemRequest(Guid ProductId, int Quantity);
-public record UpdateCartItemRequest(int Quantity);
+public record AddCartItemRequest(
+    Guid ProductId, 
+    [property: System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+    int Quantity);
+
+public record UpdateCartItemRequest(
+    [property: System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+    int Quantity);

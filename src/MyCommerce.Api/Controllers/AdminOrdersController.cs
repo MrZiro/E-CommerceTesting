@@ -45,4 +45,6 @@ public class AdminOrdersController : ApiController
     }
 }
 
-public record UpdateOrderStatusRequest(string Status);
+public record UpdateOrderStatusRequest(
+    [property: System.ComponentModel.DataAnnotations.Required]
+    string Status);

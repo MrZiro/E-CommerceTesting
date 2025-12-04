@@ -8,9 +8,31 @@ public class ImagesController : ApiController
 {
     private readonly IFileStorage _fileStorage;
 
+    private static readonly string[] AllowedTypes = { "image/png", "image/jpeg", "image/gif", "image/webp" };
+
+    private static readonly Dictionary<string, byte[][]> ImageSignatures = new()
+    {
+        { "image/png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47 } } },
+        { "image/jpeg", new[] { new byte[] { 0xFF, 0xD8, 0xFF } } },
+        { "image/gif", new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } } },
+        { "image/webp", new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } } } // RIFF header
+    };
+
     public ImagesController(IFileStorage fileStorage)
     {
         _fileStorage = fileStorage;
+    }
+
+    private static bool IsValidImageSignature(Stream stream, string contentType)
+    {
+        if (!ImageSignatures.TryGetValue(contentType, out var signatures))
+            return false;
+        
+        var headerBytes = new byte[8];
+        stream.ReadExactly(headerBytes, 0, Math.Min((int)stream.Length, headerBytes.Length));
+        stream.Position = 0; // Reset for subsequent read
+        
+        return signatures.Any(sig => headerBytes.Take(sig.Length).SequenceEqual(sig));
     }
 
     [HttpPost("upload")]
@@ -22,8 +44,7 @@ public class ImagesController : ApiController
             return BadRequest("No file uploaded.");
         }
 
-        var allowedTypes = new[] { "image/png", "image/jpeg", "image/gif", "image/webp" };
-        if (!allowedTypes.Contains(file.ContentType))
+        if (!AllowedTypes.Contains(file.ContentType))
         {
             return BadRequest("Only image files (PNG, JPEG, GIF, WebP) are allowed.");
         }
@@ -35,6 +56,13 @@ public class ImagesController : ApiController
         }
 
         using var stream = file.OpenReadStream();
+
+        // Validate magic bytes
+        if (!IsValidImageSignature(stream, file.ContentType))
+        {
+             return BadRequest("Invalid file content. Signature verification failed.");
+        }
+
         var safeFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var url = await _fileStorage.SaveFileAsync(stream, safeFileName, cancellationToken);
 

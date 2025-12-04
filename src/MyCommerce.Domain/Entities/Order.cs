@@ -38,6 +38,11 @@ public sealed class Order : AggregateRoot
         _orderItems.AddRange(orderItems);
     }
 
+    private static readonly HashSet<string> ValidStatuses = new()
+    {
+        "Pending", "Processing", "Shipped", "Delivered", "Cancelled"
+    };
+
     public static Result<Order> Create(
         Guid userId,
         IEnumerable<OrderItem> orderItems,
@@ -45,13 +50,13 @@ public sealed class Order : AggregateRoot
     {
         if (userId == Guid.Empty)
         {
-            return Result.Fail<Order>(new Error("Order.EmptyUserId", "User ID cannot be empty."));
+            return Result.Fail<Order>(DomainErrors.Order.EmptyUserId);
         }
 
         var itemsList = orderItems?.ToList() ?? new List<OrderItem>();
         if (itemsList.Count == 0)
         {
-            return Result.Fail<Order>(new Error("Order.NoItems", "Order must contain at least one item."));
+            return Result.Fail<Order>(DomainErrors.Order.NoItems);
         }
 
         // Validate currency consistency
@@ -85,8 +90,14 @@ public sealed class Order : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(newStatus))
         {
-            return Result.Fail<None>(new Error("Order.EmptyStatus", "Order status cannot be empty."));
+            return Result.Fail<None>(DomainErrors.Order.EmptyStatus);
         }
+
+        if (!ValidStatuses.Contains(newStatus))
+        {
+            return Result.Fail<None>(DomainErrors.Order.InvalidStatus);
+        }
+
         Status = newStatus;
         // Consider adding domain event here: AddDomainEvent(new OrderStatusChangedEvent(Id, newStatus));
         return Result.Success(None.Value);
@@ -106,7 +117,7 @@ public sealed class Order : AggregateRoot
         if (existingItem != null)
         {
             // Update quantity, or return error if not allowed to update
-            return Result.Fail<None>(new Error("Order.DuplicateItem", "Item already exists in order."));
+            return Result.Fail<None>(DomainErrors.Order.DuplicateItem);
         }
 
         // Recalculate total

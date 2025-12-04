@@ -31,6 +31,11 @@ public static class DomainErrors
 
     public static class Order
     {
+        public static Error EmptyUserId => new("Order.EmptyUserId", "User ID cannot be empty.");
+        public static Error NoItems => new("Order.NoItems", "Order must contain at least one item.");
+        public static Error EmptyStatus => new("Order.EmptyStatus", "Order status cannot be empty.");
+        public static Error InvalidStatus => new("Order.InvalidStatus", "Invalid order status.");
+        public static Error DuplicateItem => new("Order.DuplicateItem", "Item already exists in order.");
         public static Error MixedCurrencies => new("Order.MixedCurrencies", "All order items must use the same currency.");
         public static Error CurrencyMismatch => new("Order.CurrencyMismatch", "New item currency must match existing items.");
     }
@@ -46,5 +51,10 @@ public static class DomainErrors
     {
         public static Error Empty => new("Email.Empty", "Email cannot be empty.");
         public static Error InvalidFormat => new("Email.InvalidFormat", "Email format is invalid.");
+    }
+
+    public static class Token
+    {
+        public static Error Invalid => new("Token.Invalid", "Reset token is required.");
     }
 }

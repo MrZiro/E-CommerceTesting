@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using MyCommerce.Application.Common.Interfaces;
 using MyCommerce.Domain.Common.Result;
+using MyCommerce.Domain.Errors;
 
 namespace MyCommerce.Infrastructure.Services;
 
@@ -15,6 +16,16 @@ public class ConsoleEmailService : IEmailService
 
     public Task<Result<None>> SendPasswordResetEmailAsync(string email, string token, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return Task.FromResult(Result.Fail<None>(DomainErrors.Email.Empty));
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Task.FromResult(Result.Fail<None>(DomainErrors.Token.Invalid));
+        }
+
         _logger.LogInformation("----------------------------------------------------------------");
         _logger.LogInformation(" Sending Password Reset Email to: {Email}", email);
         _logger.LogInformation(" Token: [REDACTED] (length: {Length})", token.Length);

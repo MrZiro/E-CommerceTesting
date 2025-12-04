@@ -16,6 +16,8 @@ public class DeleteProductService
 
     public async Task<Result<None>> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
         var product = await _context.Products.FindAsync(new object[] { id }, cancellationToken);
         if (product is null)
         {
@@ -31,6 +33,7 @@ public class DeleteProductService
 
         _context.Products.Remove(product);
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Result.Success(None.Value);
     }

@@ -34,6 +34,7 @@ public class GetAllProductsService
             productsQuery = productsQuery.Where(p => p.Price.Amount <= query.MaxPrice.Value);
 
         var products = await productsQuery
+            .OrderBy(p => p.Id)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);

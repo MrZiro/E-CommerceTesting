@@ -218,7 +218,8 @@ namespace MyCommerce.Infrastructure.Migrations
                     b.HasOne("MyCommerce.Domain.Entities.Order", null)
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("MyCommerce.Domain.Entities.Product", null)
                         .WithMany()
