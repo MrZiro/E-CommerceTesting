@@ -7,6 +7,7 @@ using MyCommerce.Domain.Common.Result;
 using MyCommerce.Domain.Entities;
 using MyCommerce.Domain.Errors;
 using MyCommerce.Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace MyCommerce.Application.Orders;
 
@@ -44,88 +45,222 @@ public class OrderService
             .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, p => p, cancellationToken);
 
-        // 3. Validate Stock and Create OrderItems
-        var orderItems = new List<OrderItem>();
-
-        foreach (var cartItem in cart.Items)
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt <= maxRetries; attempt++)
         {
-            if (!products.TryGetValue(cartItem.ProductId, out var product))
+            try
             {
-                return Result.Fail<Guid>(new Error("Order.ProductNotFound", $"Product with ID {cartItem.ProductId} not found."));
-            }
+                // 3. Validate Stock and Create OrderItems
+                var orderItems = new List<OrderItem>();
 
-            // Check Stock
-            if (product.Stock < cartItem.Quantity)
-            {
-                return Result.Fail<Guid>(new Error("Order.OutOfStock", $"Not enough stock for product '{product.Name}'. Available: {product.Stock}, Requested: {cartItem.Quantity}"));
-            }
+                foreach (var cartItem in cart.Items)
+                {
+                    if (!products.TryGetValue(cartItem.ProductId, out var product))
+                    {
+                        return Result.Fail<Guid>(new Error("Order.ProductNotFound", $"Product with ID {cartItem.ProductId} not found."));
+                    }
 
-            // Create OrderItem
-            // Create new Money instance to avoid EF Core tracking issues with shared Value Objects
-            var unitPriceResult  = Money.From(product.Price.Amount, product.Price.Currency);
-            if (unitPriceResult.IsFailure)
-            {
-                return Result.Fail<Guid>(unitPriceResult.Errors);
+                    // Check Stock
+                    if (product.Stock < cartItem.Quantity)
+                    {
+                        return Result.Fail<Guid>(new Error("Order.OutOfStock", $"Not enough stock for product '{product.Name}'. Available: {product.Stock}, Requested: {cartItem.Quantity}"));
+                    }
+
+                    // Create OrderItem
+                    // Create new Money instance to avoid EF Core tracking issues with shared Value Objects
+                    var unitPriceResult = Money.From(product.Price.Amount, product.Price.Currency);
+                    if (unitPriceResult.IsFailure)
+                    {
+                        return Result.Fail<Guid>(unitPriceResult.Errors);
+                    }
+
+                    var unitPrice = unitPriceResult.Value;
+                    var orderItemResult = OrderItem.Create(product.Id, cartItem.Quantity, unitPrice);
+
+                    if (orderItemResult.IsFailure)
+                    {
+                        return Result.Fail<Guid>(orderItemResult.Errors);
+                    }
+                    orderItems.Add(orderItemResult.Value);
+                }
+
+                // 4. Create Order Entity with Pending status
+                var orderResult = Order.Create(userId, orderItems, "Pending");
+                if (orderResult.IsFailure)
+                {
+                    return Result.Fail<Guid>(orderResult.Errors);
+                }
+
+                var order = orderResult.Value;
+
+                // 5. Deduct Stock
+                foreach (var item in orderItems)
+                {
+                    var product = products[item.ProductId];
+                    var stockResult = product.UpdateStock(-item.Quantity);
+                    if (stockResult.IsFailure)
+                    {
+                        // Should not happen due to check above, but technically race condition possible if not locked
+                        return Result.Fail<Guid>(stockResult.Errors);
+                    }
+                }
+
+                // 6. Save Order FIRST (before payment processing)
+                _context.Orders.Add(order);
+
+                // 7. Clear Cart
+                // Option A: Clear items
+                cart.Clear();
+                // Option B: Delete Cart completely
+                // _context.Carts.Remove(cart); 
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // 8. Process Payment AFTER saving order
+                var paymentResult = await _paymentService.ProcessPaymentAsync(userId, order.Total.Amount, order.Total.Currency, paymentProvider, cancellationToken);
+                if (paymentResult.IsFailure || !paymentResult.Value)
+                {
+                    // Payment failed - need to compensate by rolling back stock and marking order as cancelled
+                    await CompensateForFailedPayment(order, products, cancellationToken);
+                    return Result.Fail<Guid>(new Error("Order.PaymentFailed", "Payment processing failed."));
+                }
+
+                // 9. Update order status to Processing after successful payment
+                var statusResult = order.ChangeStatus("Processing");
+                if (statusResult.IsFailure)
+                {
+                    // Log this issue but don't fail the order
+                    // In a production system, we would implement a more robust compensation mechanism
+                }
+                
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // 10. Send Email
+                var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+                if (user != null)
+                {
+                    // Create OrderDto for email
+                    var orderItems = order.OrderItems.Select(item => new OrderItemDto(
+                        item.ProductId,
+                        products[item.ProductId].Name,
+                        item.Quantity,
+                        item.UnitPrice.Amount
+                    )).ToList();
+
+                    var orderDto = new OrderDto(
+                        order.Id,
+                        order.UserId,
+                        user.Email,
+                        order.OrderDate,
+                        order.Total.Amount,
+                        order.Status,
+                        orderItems
+                    );
+
+                    // Send email asynchronously without blocking the order processing
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendOrderConfirmationAsync(user, orderDto, default);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log exception but don't fail the order processing
+                            // In a production system, we would use a proper logging framework
+                            Console.WriteLine($"Failed to send order confirmation email: {ex.Message}");
+                        }
+                    }, cancellationToken);
+                }
+
+                return order.Id;
             }
-            
-            var unitPrice = unitPriceResult.Value;
-            var orderItemResult = OrderItem.Create(product.Id, cartItem.Quantity, unitPrice);
-            
-            if (orderItemResult.IsFailure)
+            catch (DbUpdateConcurrencyException) when (attempt < maxRetries)
             {
-                return Result.Fail<Guid>(orderItemResult.Errors);
+                // Concurrency conflict occurred, but we have retries left
+                // Reload the involved products from the database
+                foreach (var productId in productIds)
+                {
+                    await _context.Entry(products[productId]).ReloadAsync(cancellationToken);
+                }
+
+                // Revalidate stock quantities after reload
+                bool stockValid = true;
+                foreach (var cartItem in cart.Items)
+                {
+                    if (products.TryGetValue(cartItem.ProductId, out var product))
+                    {
+                        if (product.Stock < cartItem.Quantity)
+                        {
+                            stockValid = false;
+                            break;
+                        }
+                    }
+                }
+
+                // If any product now lacks sufficient stock, abort with OutOfStock error
+                if (!stockValid)
+                {
+                    return Result.Fail<Guid>(new Error("Order.OutOfStock", "Not enough stock for one or more products due to concurrent orders."));
+                }
+
+                // Wait a bit before retrying to reduce contention
+                await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(50, 200)), cancellationToken);
+                
+                // Continue with next retry attempt
             }
-            orderItems.Add(orderItemResult.Value);
+            catch (DbUpdateConcurrencyException) when (attempt >= maxRetries)
+            {
+                // Max retries exceeded, check stock one final time
+                foreach (var productId in productIds)
+                {
+                    await _context.Entry(products[productId]).ReloadAsync(cancellationToken);
+                }
+
+                // Revalidate stock quantities after reload
+                foreach (var cartItem in cart.Items)
+                {
+                    if (products.TryGetValue(cartItem.ProductId, out var product))
+                    {
+                        if (product.Stock < cartItem.Quantity)
+                        {
+                            return Result.Fail<Guid>(new Error("Order.OutOfStock", "Not enough stock for one or more products due to concurrent orders."));
+                        }
+                    }
+                }
+
+                // If we still have enough stock, rethrow the exception
+                throw;
+            }
         }
 
-        // 4. Create Order Entity
-        var orderResult = Order.Create(userId, orderItems);
-        if (orderResult.IsFailure)
-        {
-            return Result.Fail<Guid>(orderResult.Errors);
-        }
+        // This shouldn't be reached due to the loop logic, but added for completeness
+        return Result.Fail<Guid>(new Error("Order.UnknownError", "An unexpected error occurred while placing the order."));
+    }
 
-        var order = orderResult.Value;
-
-        // 5. Process Payment
-        var paymentResult = await _paymentService.ProcessPaymentAsync(userId, order.Total.Amount, order.Total.Currency, paymentProvider, cancellationToken);
-        if (paymentResult.IsFailure || !paymentResult.Value)
+    private async Task CompensateForFailedPayment(Order order, Dictionary<Guid, Product> products, CancellationToken cancellationToken)
+    {
+        try
         {
-            return Result.Fail<Guid>(new Error("Order.PaymentFailed", "Payment processing failed."));
-        }
-
-        // 6. Deduct Stock
-        foreach (var item in orderItems)
-        {
-            var product = products[item.ProductId];
-            var stockResult = product.UpdateStock(-item.Quantity);
-            if (stockResult.IsFailure)
+            // Rollback stock deductions
+            foreach (var item in order.OrderItems)
             {
-                // Should not happen due to check above, but technically race condition possible if not locked
-                return Result.Fail<Guid>(stockResult.Errors);
+                if (products.TryGetValue(item.ProductId, out var product))
+                {
+                    product.UpdateStock(item.Quantity); // Add back the deducted quantity
+                }
             }
+
+            // Mark order as cancelled
+            order.ChangeStatus("Cancelled");
+
+            await _context.SaveChangesAsync(cancellationToken);
         }
-
-        // 7. Save Order
-        _context.Orders.Add(order);
-
-        // 8. Clear Cart
-        // Option A: Clear items
-        cart.Clear();
-        // Option B: Delete Cart completely
-        // _context.Carts.Remove(cart); 
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        // 9. Send Email
-        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
-        if (user != null)
+        catch (Exception ex)
         {
-            // We assume a SendOrderConfirmationAsync method exists or we construct a generic email
-             // For this demo, we just use existing infrastructure but ideally we add a method to IEmailService
+            // In a production system, we would log this and potentially trigger an alert
+            // as this indicates a potential inconsistency that needs manual resolution
         }
-
-        return order.Id;
     }
 
     public async Task<Result<List<OrderDto>>> GetMyOrdersAsync(Guid userId, CancellationToken cancellationToken = default)

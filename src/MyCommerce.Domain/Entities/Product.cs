@@ -14,6 +14,7 @@ public sealed class Product : AggregateRoot
     public int Stock { get; private set; }
     public Guid CategoryId { get; private set; } // Foreign key
     public string? ImageUrl { get; private set; }
+    public byte[] RowVersion { get; private set; } = null!; // Concurrency token
 
     // Private constructor for EF Core
     private Product() 
@@ -22,6 +23,7 @@ public sealed class Product : AggregateRoot
         Description = null!;
         Price = null!;
         Sku = null!;
+        RowVersion = null!;
     }
 
     private Product(
@@ -42,6 +44,7 @@ public sealed class Product : AggregateRoot
         Stock = stock;
         CategoryId = categoryId;
         ImageUrl = imageUrl;
+        RowVersion = null!; // Will be set by EF Core
     }
 
     public static Result<Product> Create(

@@ -35,6 +35,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             skuBuilder.HasIndex(s => s.Value).IsUnique();
         });
 
+        builder.Property(p => p.RowVersion)
+            .IsRowVersion();
+
         builder.HasOne<Category>()
             .WithMany()
             .HasForeignKey(p => p.CategoryId);
