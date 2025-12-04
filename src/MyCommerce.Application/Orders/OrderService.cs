@@ -140,7 +140,7 @@ public class OrderService
                 if (user != null)
                 {
                     // Create OrderDto for email
-                    var orderItems = order.OrderItems.Select(item => new OrderItemDto(
+                    var emailOrderItems = order.OrderItems.Select(item => new OrderItemDto(
                         item.ProductId,
                         products[item.ProductId].Name,
                         item.Quantity,
@@ -150,11 +150,11 @@ public class OrderService
                     var orderDto = new OrderDto(
                         order.Id,
                         order.UserId,
-                        user.Email,
+                        user.Email.Value,
                         order.OrderDate,
                         order.Total.Amount,
                         order.Status,
-                        orderItems
+                        emailOrderItems
                     );
 
                     // Send email asynchronously without blocking the order processing
@@ -256,7 +256,7 @@ public class OrderService
 
             await _context.SaveChangesAsync(cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // In a production system, we would log this and potentially trigger an alert
             // as this indicates a potential inconsistency that needs manual resolution

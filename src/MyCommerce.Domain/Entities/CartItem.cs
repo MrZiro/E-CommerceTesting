@@ -36,7 +36,7 @@ public sealed class CartItem : Entity
         if (Quantity + quantity <= 0)
             return Result.Fail(DomainErrors.CartItem.InvalidResultingQuantity);
         Quantity += quantity;
-        return Result.Ok();
+        return Result.Success();
     }
 
     public Result SetQuantity(int quantity)
@@ -44,6 +44,6 @@ public sealed class CartItem : Entity
         if (quantity <= 0)
             return Result.Fail(DomainErrors.CartItem.InvalidQuantity);
         Quantity = quantity;
-        return Result.Ok();
+        return Result.Success();
     }
 }

@@ -1,4 +1,5 @@
 using MyCommerce.Domain.Common;
+using MyCommerce.Domain.Common.Result;
 
 namespace MyCommerce.Domain.Entities;
 
@@ -20,16 +21,22 @@ public sealed class Cart : AggregateRoot
         return new Cart(Guid.NewGuid(), userId);
     }
 
-    public void AddItem(Guid productId, int quantity)
+    public Result AddItem(Guid productId, int quantity)
     {
         var existingItem = _items.FirstOrDefault(i => i.ProductId == productId);
         if (existingItem != null)
         {
-            existingItem.AddQuantity(quantity);
+            return existingItem.AddQuantity(quantity);
         }
         else
         {
-            _items.Add(CartItem.Create(Id, productId, quantity));
+            var itemResult = CartItem.Create(Id, productId, quantity);
+            if (itemResult.IsFailure)
+            {
+                return Result.Fail(itemResult.Errors);
+            }
+            _items.Add(itemResult.Value);
+            return Result.Success();
         }
     }
 

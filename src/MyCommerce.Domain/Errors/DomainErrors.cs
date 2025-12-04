@@ -58,4 +58,9 @@ public static class DomainErrors
     {
         public static Error Required => new("Token.Required", "Reset token is required.");
     }
+
+    public static class User
+    {
+        public static Error NotFound => new("User.NotFound", "User not found.");
+    }
 }

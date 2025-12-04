@@ -9,7 +9,7 @@ namespace MyCommerce.Api.Controllers;
 [EnableRateLimiting("Global")]
 public abstract class ApiController : ControllerBase
 {
-    protected IActionResult Problem(List<Error> errors)
+    protected IActionResult Problem(IReadOnlyList<Error> errors)
     {
         if (errors.Count == 0)
         {
