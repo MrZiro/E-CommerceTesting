@@ -52,6 +52,11 @@ public sealed class Order : AggregateRoot
         {
             return Result.Fail<Order>(DomainErrors.Order.EmptyUserId);
         }
+        if (string.IsNullOrWhiteSpace(status) || !ValidStatuses.Contains(status))
+        {
+            return Result.Fail<Order>(DomainErrors.Order.InvalidStatus);
+        }
+
 
         var itemsList = orderItems?.ToList() ?? new List<OrderItem>();
         if (itemsList.Count == 0)

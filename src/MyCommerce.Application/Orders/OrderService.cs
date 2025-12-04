@@ -62,7 +62,13 @@ public class OrderService
 
             // Create OrderItem
             // Create new Money instance to avoid EF Core tracking issues with shared Value Objects
-            var unitPrice = Money.From(product.Price.Amount, product.Price.Currency).Value;
+            var unitPriceResult  = Money.From(product.Price.Amount, product.Price.Currency);
+            if (unitPriceResult.IsFailure)
+            {
+                return Result.Fail<Guid>(unitPriceResult.Errors);
+            }
+            
+            var unitPrice = unitPriceResult.Value;
             var orderItemResult = OrderItem.Create(product.Id, cartItem.Quantity, unitPrice);
             
             if (orderItemResult.IsFailure)
