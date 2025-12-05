@@ -20,6 +20,14 @@
     - **Revalidation:** Use `revalidateTag('products')` in Server Actions to refresh data.
 - **Server Actions:** Replace API routes for data mutations.
     - Mask the backend API: `Client -> Next.js Server Action -> .NET Backend`.
+- **Authentication Strategy:**
+    - Store the JWT returned by .NET in an **HTTP-Only Cookie** within the Next.js server (Server Action).
+    - Middleware (`middleware.ts`) will read this cookie to handle protected routes (`/admin`).
+    - `api-client.ts` will automatically attach this cookie to outgoing requests to the backend.
+- **Error Handling:**
+    - Map .NET `ProblemDetails` responses to UI-friendly errors.
+    - Use `error.tsx` boundaries for critical failures.
+    - Return structured error objects `{ success: false, error: "..." }` from Server Actions for form validation.
 
 ### Folder Structure
 ```text
