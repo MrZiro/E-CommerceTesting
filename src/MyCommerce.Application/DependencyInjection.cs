@@ -7,9 +7,11 @@ using MyCommerce.Application.Authentication;
 using MyCommerce.Application.Products.Create;
 using MyCommerce.Application.Products.Queries.GetAllProducts;
 using MyCommerce.Application.Products.Queries.GetProductById;
+using MyCommerce.Application.Categories.Create;
+using MyCommerce.Application.Categories.Delete;
 using MyCommerce.Application.Categories.Queries.GetAllCategories;
 using MyCommerce.Application.Categories.Queries.GetCategoryById;
-using MyCommerce.Application.Categories.Create;
+using MyCommerce.Application.Categories.Update;
 using MyCommerce.Application.Carts;
 using MyCommerce.Application.Orders;
 using MyCommerce.Application.Dashboard;
@@ -50,12 +52,19 @@ public static class DependencyInjection
         services.AddScoped<GetAllProductsService>();
         services.AddScoped<GetProductByIdService>();
         
+        // Categories
+        services.AddScoped<CreateCategoryService>();
         services.AddScoped<GetAllCategoriesService>();
         services.AddScoped<GetCategoryByIdService>();
-        services.AddScoped<CreateCategoryService>();
+        services.AddScoped<UpdateCategoryService>();
+        services.AddScoped<DeleteCategoryService>();
         
         services.AddScoped<CartService>();
         services.AddScoped<OrderService>();
         services.AddScoped<DashboardService>();
+        
+        // Users
+        services.AddScoped<MyCommerce.Application.Users.Queries.GetUserById.GetUserByIdService>();
+        services.AddScoped<MyCommerce.Application.Users.Update.UpdateProfile.UpdateUserProfileService>();
     }
 }
