@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/layout/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
   description: "A modern e-commerce storefront built with Next.js 16",
 };
 
+/**
+ * Root application layout that renders the top-level HTML structure and applies global fonts and styles.
+ *
+ * @param children - The React nodes to be rendered inside the document body.
+ * @returns The root JSX element containing `<html lang="en">` and `<body>` with the configured font CSS variables and antialiasing class.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Navbar />
         {children}
       </body>
     </html>

@@ -6,6 +6,14 @@ interface ProductCardProps {
   product: Product;
 }
 
+/**
+ * Render a clickable product card that links to the product detail page.
+ *
+ * Shows the product image (or a fallback placeholder), name, SKU, and a currency-formatted price.
+ *
+ * @param product - Product data used to populate the card. Must include `id`, `name`, `sku`, `priceAmount`, and `priceCurrency`; `imageUrl` may be omitted to show a placeholder.
+ * @returns The product card as a JSX element.
+ */
 export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/products/${product.id}`} className="group block space-y-2">
