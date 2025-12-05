@@ -18,8 +18,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       isPublic: true,
       next: { tags: [`product-${id}`] },
     });
-  } catch (error: any) {
-    if (error.status === 404) {
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 404) {
       notFound();
     }
     console.error('Failed to fetch product:', error);
