@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import { Product } from '@/types';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { AddToCartButton } from '@/components/features/AddToCartButton';
 
 interface ProductPageProps {
   params: Promise<{
@@ -15,6 +16,22 @@ interface ProductPageProps {
  * @param params - Promise resolving to route parameters containing the product `id` string
  * @returns The JSX for the product detail page. If the product cannot be fetched or is not found, `notFound()` is invoked instead.
  */
+export async function generateStaticParams() {
+  try {
+    const products = await apiClient<Product[]>('/products?pageSize=10', {
+      isPublic: true,
+      next: { tags: ['products'] },
+    });
+
+    return products.map((product) => ({
+      id: product.id,
+    }));
+  } catch (error) {
+    console.error('Failed to generate static params for products:', error);
+    return [];
+  }
+}
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   let product: Product | null = null;
@@ -24,8 +41,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       isPublic: true,
       next: { tags: [`product-${id}`] },
     });
-  } catch (error: any) {
-    if (error.status === 404) {
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 404) {
       notFound();
     }
     console.error('Failed to fetch product:', error);
@@ -78,12 +95,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <div className="mt-10 flex">
-              <button
-                type="button"
-                className="flex max-w-xs flex-1 items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50 sm:w-full"
-              >
-                Add to bag
-              </button>
+               <AddToCartButton productId={product.id} />
             </div>
           </div>
         </div>

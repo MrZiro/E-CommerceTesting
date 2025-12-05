@@ -12,14 +12,16 @@ import { ProductGrid } from '@/components/features/ProductGrid';
  */
 export default async function Home() {
   let products: Product[] = [];
+  let errorMessage: string | null = null;
 
   try {
     products = await apiClient<Product[]>('/products', {
       isPublic: true,
       next: { tags: ['products'] },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch products:', error);
+    errorMessage = error.detail || error.message || 'Failed to load products. Please try again later.';
   }
 
   return (
@@ -34,7 +36,20 @@ export default async function Home() {
           </p>
         </div>
 
-        <ProductGrid products={products} />
+        {errorMessage ? (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error loading products</h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{errorMessage}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
       </main>
     </div>
   );

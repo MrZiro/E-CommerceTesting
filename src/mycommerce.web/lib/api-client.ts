@@ -3,6 +3,10 @@ import { ApiError } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+if (!API_BASE_URL) {
+  throw new Error('NEXT_PUBLIC_API_BASE_URL is not defined');
+}
+
 type FetchOptions = Omit<RequestInit, 'headers'> & {
   headers?: Record<string, string>;
   isPublic?: boolean; // If true, skips auth token to avoid dynamic rendering opt-in on static pages
