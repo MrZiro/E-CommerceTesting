@@ -9,6 +9,12 @@ interface ProductPageProps {
   }>;
 }
 
+/**
+ * Render the product detail page for the product identified by the given route params.
+ *
+ * @param params - Promise resolving to route parameters containing the product `id` string
+ * @returns The JSX for the product detail page. If the product cannot be fetched or is not found, `notFound()` is invoked instead.
+ */
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   let product: Product | null = null;

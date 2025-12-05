@@ -2,6 +2,14 @@ import { apiClient } from '@/lib/api-client';
 import { Product } from '@/types';
 import { ProductGrid } from '@/components/features/ProductGrid';
 
+/**
+ * Render the home page showing a list of products.
+ *
+ * Fetches products from the API and renders the page header and a ProductGrid populated with the fetched products.
+ * If fetching fails the product list will remain empty and the error is logged to the console.
+ *
+ * @returns The page's JSX element containing the header and product grid.
+ */
 export default async function Home() {
   let products: Product[] = [];
 

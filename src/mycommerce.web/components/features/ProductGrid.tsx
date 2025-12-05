@@ -5,6 +5,14 @@ interface ProductGridProps {
   products: Product[];
 }
 
+/**
+ * Render a responsive grid of product cards.
+ *
+ * Displays a centered "No products found." message when `products` is empty or falsy.
+ *
+ * @param products - Array of products to display in the grid
+ * @returns A JSX element containing a responsive grid of ProductCard components or the empty-state message
+ */
 export function ProductGrid({ products }: ProductGridProps) {
   if (!products || products.length === 0) {
     return (
