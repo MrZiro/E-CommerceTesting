@@ -77,6 +77,22 @@ public sealed class User : AggregateRoot
             userRoles);
     }
 
+    public Result<None> UpdateProfile(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+        {
+            return Result.Fail<None>(new Error("User.EmptyFirstName", "First name cannot be empty."));
+        }
+        if (string.IsNullOrWhiteSpace(lastName))
+        {
+            return Result.Fail<None>(new Error("User.EmptyLastName", "Last name cannot be empty."));
+        }
+
+        FirstName = firstName;
+        LastName = lastName;
+        return Result.Success(None.Value);
+    }
+
     public Result<None> ChangeEmail(Email newEmail)
     {
         // Add logic to check if email already exists in DB (Application layer responsibility)
