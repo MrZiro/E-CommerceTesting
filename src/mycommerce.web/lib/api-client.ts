@@ -12,6 +12,15 @@ type FetchOptions = Omit<RequestInit, 'headers'> & {
   isPublic?: boolean; // If true, skips auth token to avoid dynamic rendering opt-in on static pages
 };
 
+/**
+ * Perform an HTTP request against the configured API and return the parsed response body.
+ *
+ * @param endpoint - The request path appended to the API base URL (e.g., "/users").
+ * @param options - Fetch options; when `isPublic` is false (default) an `Authorization: Bearer <token>` header
+ *                  will be added from the `auth_token` cookie if present. Other provided headers are merged.
+ * @returns The parsed JSON response as type `T`. Returns an empty object cast to `T` when the response status is 204.
+ * @throws An `ApiError` containing `status` and `title` (and any returned error details) for non-successful responses.
+ */
 export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { isPublic = false, ...fetchOptions } = options;
 

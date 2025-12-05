@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   description: "A modern e-commerce storefront built with Next.js 16",
 };
 
+/**
+ * Root application layout that renders the top-level HTML structure and applies global fonts and styles.
+ *
+ * @param children - The React nodes to be rendered inside the document body.
+ * @returns The root JSX element containing `<html lang="en">` and `<body>` with the configured font CSS variables and antialiasing class.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
