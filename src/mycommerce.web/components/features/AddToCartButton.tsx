@@ -2,6 +2,7 @@
 
 import { addToCart } from '@/app/actions/cart';
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface AddToCartButtonProps {
   productId: string;
@@ -9,14 +10,20 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ productId }: AddToCartButtonProps) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleAddToCart = () => {
     startTransition(async () => {
       try {
         await addToCart(productId);
         alert('Added to cart!'); // Temporary feedback
-      } catch (error) {
-        alert('Failed to add to cart. Please try again.');
+        router.refresh(); // Update UI if needed (e.g. cart count in header)
+      } catch (error: any) {
+        if (error.message === 'Unauthorized') {
+            router.push('/login');
+        } else {
+            alert('Failed to add to cart. Please try again.');
+        }
       }
     });
   };
